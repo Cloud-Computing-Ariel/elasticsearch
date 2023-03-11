@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: nestjs-elasticsearch
+    ports:
+      - '3002:3002'
+    volumes:
+      - ./:/usr/app
+      - /usr/app/node_modules/
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NODE_PORT=3002
+    command: npm run start:dev
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  esdata:
+    driver: local
