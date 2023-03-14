@@ -7,11 +7,13 @@ services:
     ports:
       - '3002:3002'
     volumes:
-      - ./:/usr/app
-      - /usr/app/node_modules/
+      - .:/usr/app
+      - /usr/app/node_modules
+      # - ./node_modules/:/usr/app/node_modules/
     depends_on:
       - elasticsearch
     environment:
+      - CHOKIDAR_USEPOLLING=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - NODE_PORT=3002
     command: npm run start:dev
@@ -28,7 +30,8 @@ services:
       - '9300:9300'
     volumes:
       - esdata:/usr/share/elasticsearch/data
-
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
 volumes:
+  ignore:
   esdata:
     driver: local

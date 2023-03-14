@@ -1,12 +1,14 @@
-FROM node:18-alpine
+FROM node:19-alpine
 
-RUN npm install -g nodemon
+USER root
 
 WORKDIR /usr/app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install -g npm && npm ci
+
+RUN npm install -g @nestjs/cli
 
 COPY . .
 
