@@ -12,6 +12,7 @@ services:
       # - ./node_modules/:/usr/app/node_modules/
     depends_on:
       - elasticsearch
+    restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
