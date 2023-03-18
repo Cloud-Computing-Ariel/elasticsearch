@@ -4,6 +4,6 @@ export interface SearchResultsDTO {
   ingredient3: number;
   ingredient4: number;
   amount: number;
-  processTime: Date;
+  processTime: number;
   time: Date;
 }

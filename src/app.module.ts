@@ -1,29 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
     ElasticsearchModule.register({
-      node: 'http://elasticsearch:9200',
+      node: 'http://localhost:9200',
     }),
-    ClientsModule.register([
-      {
-        name: 'ELASTIC_SERVICE',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: 'pizza',
-            brokers: ['localhost:9092'],
-          },
-          consumer: {
-            groupId: 'nestjs-kafka',
-          },
-        },
-      },
-    ]),
+    KafkaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

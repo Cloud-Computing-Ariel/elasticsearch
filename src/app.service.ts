@@ -1,6 +1,7 @@
 import { Result } from '@elastic/elasticsearch/lib/api/types';
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import * as moment from 'moment';
 import { SearchResultsDTO } from './search.dtos';
 
 export const status = { open: 'open', closed: 'closed' } as const;
@@ -10,7 +11,7 @@ export interface Order {
   restaurantId: number;
   restaurantCity: string;
   restaurantRegion: string;
-  proccessTime?: Date;
+  proccessTime?: number;
   orderTime?: Date;
   order: {
     id: number;
@@ -25,34 +26,71 @@ export class AppService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
   async createIndex(order: Order): Promise<Result> {
-    console.log('creating index');
-    const result = await this.elasticsearchService.index({
-      index: 'orders',
-      document: order,
-      id: String(order.order.id),
-    });
-    console.log('created index: ', result);
-    return result.result;
+    order.orderTime = order.order.statusTime;
+    try {
+      const result = await this.elasticsearchService.index({
+        index: 'orders',
+        document: order,
+        refresh: true,
+        id: String(order.order.id),
+      });
+      return result.result;
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   isOrderType(order: unknown): order is Order {
     return typeof order === 'object';
   }
 
+  async updateOrder(restaurantId: number, orderId: number) {
+    const results = await this.elasticsearchService.search({
+      index: 'orders',
+      query: {
+        match: {
+          restaurantId: restaurantId,
+        },
+      },
+    });
+    const ordersMatched = results.hits.hits.map((hit) => {
+      if (this.isOrderType(hit._source)) {
+        return hit._source;
+      }
+    });
+    const currOrder = ordersMatched.find((order) => order.order.id === orderId);
+    currOrder.proccessTime = moment().diff(currOrder.orderTime);
+    console.log(currOrder);
+    const res = await this.elasticsearchService.update({
+      index: 'orders',
+      id: String(currOrder.restaurantId),
+      doc: currOrder,
+    });
+    return res;
+  }
+
   async getSearchResults(
     date: string,
     branch: string,
   ): Promise<SearchResultsDTO[]> {
+    const formattedDate = moment(
+      `${date.split('/')[2]}${date.split('/')[1]}${date.split('/')[0]}`,
+    ).toDate();
+
     const results = await this.elasticsearchService.search({
       index: 'orders',
-      body: {
-        query: {
-          bool: {
-            must: [
-              { match: { branch: branch } },
-              { range: { date: { gte: date, lte: date } } },
-            ],
-          },
+      query: {
+        bool: {
+          must: [
+            { match: { restaurantCity: branch } },
+            {
+              range: {
+                orderTime: {
+                  gte: formattedDate.toISOString(),
+                },
+              },
+            },
+          ],
         },
       },
     });
@@ -83,28 +121,8 @@ export class AppService {
       },
       [] as SearchResultsDTO[],
     );
-    console.log(ordersMatched);
-    console.log(retResults);
+    console.log('ordersMatched: ', ordersMatched);
+    console.log('retResults: ', retResults);
     return retResults;
-    // return [
-    //   {
-    //     ingredient1: 4,
-    //     ingredient2: 12,
-    //     ingredient3: 555,
-    //     ingredient4: 64,
-    //     amount: 2,
-    //     processTime: new Date(),
-    //     time: new Date(),
-    //   },
-    //   {
-    //     ingredient1: 424,
-    //     ingredient2: 111,
-    //     ingredient3: 222,
-    //     ingredient4: 333,
-    //     amount: 2,
-    //     processTime: new Date(),
-    //     time: new Date(),
-    //   },
-    // ];
   }
 }

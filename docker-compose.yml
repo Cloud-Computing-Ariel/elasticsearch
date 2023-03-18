@@ -1,23 +1,23 @@
 version: '3.9'
 
 services:
-  app:
-    build: .
-    container_name: nestjs-elasticsearch
-    ports:
-      - '3002:3002'
-    volumes:
-      - .:/usr/app
-      - /usr/app/node_modules
-      # - ./node_modules/:/usr/app/node_modules/
-    depends_on:
-      - elasticsearch
-    restart: always
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - NODE_PORT=3002
-    command: npm run start:dev
+  # app:
+  #   build: .
+  #   container_name: nestjs-elasticsearch
+  #   ports:
+  #     - '3002:3002'
+  #   volumes:
+  #     - .:/usr/app
+  #     - /usr/app/node_modules
+  #     # - ./node_modules/:/usr/app/node_modules/
+  #   depends_on:
+  #     - elasticsearch
+  #   restart: always
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - ELASTICSEARCH_URL=http://elasticsearch:9200
+  #     - NODE_PORT=3002
+  #   command: npm run start:dev
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
