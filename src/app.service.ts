@@ -59,13 +59,19 @@ export class AppService {
       }
     });
     const currOrder = ordersMatched.find((order) => order.order.id === orderId);
+    if(!currOrder){
+      return currOrder
+    }
     currOrder.proccessTime = moment().diff(currOrder.orderTime);
+    
     console.log(currOrder);
     const res = await this.elasticsearchService.update({
       index: 'orders',
       id: String(currOrder.restaurantId),
       doc: currOrder,
     });
+    
+  
     return res;
   }
 
