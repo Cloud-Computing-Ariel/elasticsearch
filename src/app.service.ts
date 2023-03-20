@@ -11,7 +11,7 @@ export interface Order {
   restaurantId: number;
   restaurantCity: string;
   restaurantRegion: string;
-  proccessTime?: number;
+  processTime?: number;
   orderTime?: Date;
   order: {
     id: number;
@@ -35,9 +35,7 @@ export class AppService {
         id: String(order.order.id),
       });
       return result.result;
-    } catch (err) {
-      console.log(err);
-    }
+    } catch (err) {}
   }
 
   isOrderType(order: unknown): order is Order {
@@ -59,14 +57,15 @@ export class AppService {
       }
     });
     const currOrder = ordersMatched.find((order) => order.order.id === orderId);
-    currOrder.proccessTime = moment().diff(currOrder.orderTime);
-    console.log(currOrder);
-    const res = await this.elasticsearchService.update({
-      index: 'orders',
-      id: String(currOrder.restaurantId),
-      doc: currOrder,
-    });
-    return res;
+    currOrder.processTime = moment().diff(currOrder.orderTime);
+    try {
+      const res = await this.elasticsearchService.update({
+        index: 'orders',
+        id: String(currOrder.restaurantId),
+        doc: currOrder,
+      });
+      return res;
+    } catch (err) {}
   }
 
   async getSearchResults(
@@ -75,8 +74,7 @@ export class AppService {
   ): Promise<SearchResultsDTO[]> {
     const formattedDate = moment(
       `${date.split('/')[2]}${date.split('/')[1]}${date.split('/')[0]}`,
-    ).toDate();
-
+    );
     const results = await this.elasticsearchService.search({
       index: 'orders',
       query: {
@@ -86,7 +84,8 @@ export class AppService {
             {
               range: {
                 orderTime: {
-                  gte: formattedDate.toISOString(),
+                  gte: formattedDate.startOf('day').toISOString(),
+                  lte: formattedDate.endOf('day').toISOString(),
                 },
               },
             },
@@ -102,27 +101,45 @@ export class AppService {
     const retResults: SearchResultsDTO[] = ordersMatched.reduce(
       (acc, currOrder, index) => {
         const result = {} as SearchResultsDTO;
-        result.ingredient1 = currOrder.order.toppings.filter(
+        result.olives = currOrder.order.toppings.filter(
           (topping) => topping === 'Olives',
         ).length;
-        result.ingredient2 = currOrder.order.toppings.filter(
+        result.mushrooms = currOrder.order.toppings.filter(
           (topping) => topping === 'Mushrooms',
         ).length;
-        result.ingredient3 = currOrder.order.toppings.filter(
-          (topping) => topping === 'Onions',
+        result.pepperoni = currOrder.order.toppings.filter(
+          (topping) => topping === 'Pepperoni',
         ).length;
-        result.ingredient4 = currOrder.order.toppings.filter(
+        result.sausage = currOrder.order.toppings.filter(
+          (topping) => topping === 'Sausage',
+        ).length;
+        result.extraCheese = currOrder.order.toppings.filter(
+          (topping) => topping === 'Extra Cheese',
+        ).length;
+        result.greenPepper = currOrder.order.toppings.filter(
+          (topping) => topping === 'Green Pepper',
+        ).length;
+        result.tomato = currOrder.order.toppings.filter(
+          (topping) => topping === 'Tomato',
+        ).length;
+        result.bacon = currOrder.order.toppings.filter(
+          (topping) => topping === 'Bacon',
+        ).length;
+        result.corn = currOrder.order.toppings.filter(
           (topping) => topping === 'Corn',
         ).length;
+        result.pineapple = currOrder.order.toppings.filter(
+          (topping) => topping === 'Pineapple',
+        ).length;
         result.time = currOrder.orderTime;
-        result.processTime = currOrder.proccessTime;
+        result.processTime = currOrder.processTime;
         acc.push(result);
         return acc;
       },
       [] as SearchResultsDTO[],
     );
-    console.log('ordersMatched: ', ordersMatched);
-    console.log('retResults: ', retResults);
+    console.log(retResults);
+
     return retResults;
   }
 }
